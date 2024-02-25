@@ -1,0 +1,42 @@
+version: '3.9'
+
+services:
+  postgresqldb:
+    image: postgres:9.5
+    container_name: "${POSTGRES_HOST}"
+    networks:
+      - app-network
+    restart: always
+    ports: 
+      - "5432:5432"
+    command: postgres
+    expose:
+      - 5432
+    env_file:
+      - .env
+    volumes:
+      - "pgdata:/var/lib/postgresql/data"
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready" ]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  pg-update-tests:
+    container_name: pg-update-tests
+    build: .
+    networks:
+      - app-network
+    env_file:
+      - .env
+      - app.env
+    depends_on:
+      postgresqldb:
+        condition: service_healthy
+
+networks:
+  app-network:
+    driver: bridge
+
+volumes:
+  pgdata:
